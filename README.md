@@ -59,4 +59,4 @@ FastAPI `BackgroundTasks` is also not a durable queue: work can be lost on proce
 
 ## Explicitly still TBD / next phase
 
-No values or behavior were invented for gacha cost/odds/pity, battle scoring, ranking rules, daily missions, proficiency formulas, hint policy, or AI provider selection. Public housing visits, petting another user's cat, visit rewards, visitor read-only isolation, and idempotent social rewards remain confirmed next-phase functionality outside this vertical slice.
+No values or behavior were invented for gacha cost/odds/pity, battle scoring, ranking rules, daily missions, proficiency formulas, hint policy, AI provider selection, or mileage meaning. Public housing visits, petting another user's cat, visit rewards, visitor read-only isolation, and idempotent social rewards remain confirmed next-phase functionality outside this vertical slice.
