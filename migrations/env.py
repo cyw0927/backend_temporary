@@ -3,7 +3,12 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.db.base import Base
+import app.modules.economy.models  # noqa: F401
+import app.modules.grading.models  # noqa: F401
+import app.modules.housing.models  # noqa: F401
 import app.modules.identity.models  # noqa: F401
+import app.modules.learning.models  # noqa: F401
+import app.modules.shop.models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)
