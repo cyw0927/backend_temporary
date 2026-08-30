@@ -1,8 +1,72 @@
-# Cat Game Backend — Vertical Slice MVP
+# 🐈 Cat Game Backend
 
-프로그래밍 초보자를 위한 고양이 학습 게임의 FastAPI 백엔드이다.
+> **Python을 배우고, 문제를 풀고, 보상으로 고양이의 공간을 꾸미는 학습 게임 백엔드**
 
-이 저장소는 전체 PRD 완성본이 아니라, **문제 조회 → 코드 제출 → 백그라운드 채점 → 결과 조회 → 1회 보상 → 상품 구매 → 보유 가구 사용**으로 이어지는 백엔드 핵심 흐름을 실행하고 검증한 세로형(vertical slice) MVP이다.
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.116%2B-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Primary_DB-4169E1?logo=postgresql&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.x-D71F00)
+![Alembic](https://img.shields.io/badge/Migration-Alembic-6BA81E)
+![Tests](https://img.shields.io/badge/tests-7_passed-brightgreen)
+
+프로그래밍 초보자가 Python 문제를 반복해서 풀고 즉시 결과를 확인하며, 학습 보상으로 가구를 구매하고 하우징을 꾸밀 수 있도록 설계한 FastAPI 백엔드이다.
+
+## 프로젝트 소개
+
+수업에서 Python 문법을 배워도 직접 코드를 작성하고 실패를 고쳐 볼 기회가 부족하면 개념이 오래 남기 어렵다. 이 프로젝트는 부담 없이 다시 시도할 수 있는 문제 풀이 환경과 수집·꾸미기 보상을 연결하여 반복 학습의 동기를 만드는 것을 목표로 한다.
+
+현재 저장소는 전체 PRD 완성본이 아니라, 아래 핵심 흐름이 실제 API와 DB transaction으로 이어지는지 검증한 **백엔드 세로형(vertical slice) MVP**이다.
+
+```mermaid
+flowchart TD
+    A[학습자] --> B[문제 목록·상세 조회]
+    B --> C[코드 제출]
+    C --> D[PENDING attempt 저장]
+    D --> E[백그라운드 채점]
+    E --> F[결과 polling]
+    F --> G[정답 보상 1회 지급]
+    G --> H[상점 구매·inventory]
+    H --> I[보유 가구 배치]
+```
+
+## 한눈에 보는 현재 상태
+
+| 구분 | 상태 | 설명 |
+| --- | --- | --- |
+| FastAPI 서버 | ✅ 구동 가능 | `/health`, `/docs` 제공 |
+| PostgreSQL 연동 | ✅ 코드·migration 준비 | 실제 PC에 PostgreSQL과 DB 설정 필요 |
+| 사용자·문제 조회 | ✅ 구현 | ID 조회, 문제 목록·상세 조회 |
+| 제출·비동기 채점 흐름 | ✅ 구현 | `PENDING` 선행 commit, 결과 polling |
+| 채점 방식 | ⚠️ 개발용 | 실제 코드 실행이 아닌 정규화 문자열 비교 |
+| 보상·구매·inventory | ✅ 구현 | 중복 보상 방지, 원자적 잔액 차감 |
+| 하우징 | ⚠️ 기본 기능 | 보유 가구의 단순 슬롯 배치 |
+| 초기 데이터 | ⏳ 후속 작업 | 사용자·문제·상품 seed 필요 |
+| 고양이·가챠·소셜 | ⏳ 미구현 | 폴더 골격만 존재 |
+| 프런트엔드·Tauri | ⏳ 별도 범위 | 이 저장소는 백엔드 전용 |
+
+> [!IMPORTANT]
+> 현재 채점기는 제출 코드를 직접 실행하지 않는다. 제출·상태 저장·polling·보상 흐름을 검증하는 개발용 evaluator이며, 실제 Python sandbox 채점은 후속 개발 범위이다.
+
+## 기술 구성
+
+| 영역 | 사용 기술 | 역할 |
+| --- | --- | --- |
+| API | FastAPI | HTTP endpoint와 Swagger UI |
+| Database | PostgreSQL | 운영 기준 영속 데이터 저장소 |
+| ORM | SQLAlchemy 2.x | 모델과 transaction 처리 |
+| Migration | Alembic | DB schema 변경 이력 관리 |
+| Validation | Pydantic | 제출·구매 요청 데이터 검증 |
+| Background work | FastAPI BackgroundTasks | 개발 단계의 프로세스 내부 채점 |
+| Test | Pytest + SQLite | 외부 서비스 없는 핵심 흐름 검증 |
+
+## 문서 바로가기
+
+- [현재 구동 가능한 범위](#1-현재-구동-가능한-범위)
+- [`tasks`와 `task_attempts` 역할 정정](#2-tasks와-task_attempts-역할-정정)
+- [주요 API](#3-주요-api)
+- [Windows PowerShell 실행 방법](#4-windows-powershell-실행-방법)
+- [아직 구현되지 않은 PRD 범위](#10-아직-구현되지-않은-prd-범위)
+- [폴더별 상세 안내](#11-폴더-안내)
 
 ## 1. 현재 구동 가능한 범위
 
