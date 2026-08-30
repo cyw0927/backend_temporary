@@ -11,6 +11,37 @@
 
 프로그래밍 초보자가 Python 문제를 반복해서 풀고 즉시 결과를 확인하며, 학습 보상으로 가구를 구매하고 하우징을 꾸밀 수 있도록 설계한 FastAPI 백엔드이다.
 
+## 현재 구현한 기능과 읽을 위치
+
+현재 **6개 핵심 도메인 모듈(identity, learning, grading, economy, shop, housing)**과 서버·DB 공통 기반을 구현했다. 전체 PRD 기능을 모두 만든 것은 아니며, 문제 조회부터 보상·구매·기본 하우징까지 이어지는 백엔드 세로형 MVP 범위이다.
+
+아래 표의 **설명 문서**를 누르면 기능의 목적과 처리 흐름을, **실제 코드**를 누르면 구현 파일을 확인할 수 있다.
+
+| 구현 영역 | 실제 구현한 범위 | 상태 | 설명 문서 | 실제 코드 |
+| --- | --- | --- | --- | --- |
+| 서버·Health | FastAPI 앱 생성, router 등록, 서버·DB 상태 확인 | ✅ 구현 | [`app`](app/README.md) · [`api`](app/api/README.md) | [`main.py`](app/main.py) · [`health.py`](app/api/health.py) |
+| 사용자 | 사용자 ID 기반 정보·잔액 조회, DB와 분리된 조회 service | ✅ 구현 | [`identity 설명`](app/modules/identity/README.md) | [`identity/`](app/modules/identity/) |
+| 학습 문제 | 문제 목록·상세 조회, 기준 정답 비공개 | ✅ 구현 | [`learning 설명`](app/modules/learning/README.md) | [`learning/`](app/modules/learning/) |
+| 제출·채점 | `PENDING` attempt 선행 commit, HTTP 202, 백그라운드 채점, 결과 polling | ✅ 흐름 구현 | [`grading 설명`](app/modules/grading/README.md) | [`grading/`](app/modules/grading/) |
+| 실제 코드 실행 | 제출 코드와 기준 답안의 정규화 문자열 비교 | ⚠️ 개발용 evaluator | [`채점기 한계`](app/modules/grading/README.md#파일-역할) | [`evaluator.py`](app/modules/grading/evaluator.py) |
+| 정답 보상 | 원자적 잔액 증가, UNIQUE 원장으로 attempt당 정확히 1회 지급 | ✅ 구현 | [`economy 설명`](app/modules/economy/README.md) | [`economy/`](app/modules/economy/) |
+| 상점·Inventory | 활성 상품 조회, 조건부 원자적 잔액 차감, 보유 수량 반영 | ✅ 구현 | [`shop 설명`](app/modules/shop/README.md) | [`shop/`](app/modules/shop/) |
+| 하우징 | 보유 상품 조회, 소유한 furniture의 슬롯 배치·변경 | ⚠️ 기본 기능 | [`housing 설명`](app/modules/housing/README.md) | [`housing/`](app/modules/housing/) |
+| DB·Migration | SQLAlchemy Base/session, PostgreSQL 설정, users 및 MVP schema migration | ✅ 구현 | [`DB 설명`](app/db/README.md) · [`migration 설명`](migrations/README.md) | [`db/`](app/db/) · [`versions/`](migrations/versions/) |
+| 자동화 테스트 | Health, 사용자, 문제, 제출·채점, 보상, 구매, inventory, housing 검증 | ✅ 7개 통과 | [`tests 설명`](tests/README.md) | [`tests/`](tests/) |
+
+### 아직 골격만 있는 기능
+
+다음 폴더는 향후 확장을 위해 만들어 둔 위치이며, 실제 기능이 구현된 것으로 계산하지 않는다.
+
+- [`cats`](app/modules/cats/README.md): 고양이 수집·돌봄·대화·기억
+- [`gacha`](app/modules/gacha/README.md): 단일·10+1 뽑기, 확률·천장·중복 처리
+- [`battle`](app/modules/battle/README.md): battle 규칙과 처리
+- [`daily_mission`](app/modules/daily_mission/README.md): 일일 미션과 보상
+- [`ranking`](app/modules/ranking/README.md): 선택형 소규모 그룹 순위
+- [`integrations/ai`](app/integrations/ai/README.md): Gemini 등 AI provider 연결
+- [`integrations/queue`](app/integrations/queue/README.md): Redis Queue·Celery 등 durable queue 연결
+
 ## 프로젝트 소개
 
 수업에서 Python 문법을 배워도 직접 코드를 작성하고 실패를 고쳐 볼 기회가 부족하면 개념이 오래 남기 어렵다. 이 프로젝트는 부담 없이 다시 시도할 수 있는 문제 풀이 환경과 수집·꾸미기 보상을 연결하여 반복 학습의 동기를 만드는 것을 목표로 한다.
