@@ -1,331 +1,63 @@
-# 🐈 Cat Game Backend
+# Cat Game Backend
 
-> **Python을 배우고, 문제를 풀고, 보상으로 고양이의 공간을 꾸미는 학습 게임 백엔드**
+코딩 학습, 채점, 일일 미션, 배틀, 랭킹·승급전, 경제, 상점·가챠, 고양이와 하우징을 제공하는 FastAPI 백엔드다.
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.116%2B-009688?logo=fastapi&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Primary_DB-4169E1?logo=postgresql&logoColor=white)
-![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.x-D71F00)
-![Alembic](https://img.shields.io/badge/Migration-Alembic-6BA81E)
-![Tests](https://img.shields.io/badge/tests-7_passed-brightgreen)
+## 구조 원칙
 
-프로그래밍 초보자가 Python 문제를 반복해서 풀고 즉시 결과를 확인하며, 학습 보상으로 가구를 구매하고 하우징을 꾸밀 수 있도록 설계한 FastAPI 백엔드이다.
+- 기능 중심 모듈형 모놀리스
+- HTTP router와 비즈니스 규칙 분리
+- 배틀은 서버 권위 상태 머신으로 관리
+- Docker 채점과 일반 학습 기능 분리
+- 재화 변경은 economy 모듈을 단일 진입점으로 사용
+- 공개 방문자는 타인의 영구 상태에 read-only
+- 미확정 가격·확률·보상 정책은 코드에 하드코딩하지 않음
 
-## 현재 구현한 기능과 읽을 위치
+## 시작
 
-현재 **6개 핵심 도메인 모듈(identity, learning, grading, economy, shop, housing)**과 서버·DB 공통 기반을 구현했다. 전체 PRD 기능을 모두 만든 것은 아니며, 문제 조회부터 보상·구매·기본 하우징까지 이어지는 백엔드 세로형 MVP 범위이다.
-
-아래 표의 **설명 문서**를 누르면 기능의 목적과 처리 흐름을, **실제 코드**를 누르면 구현 파일을 확인할 수 있다.
-
-| 구현 영역 | 실제 구현한 범위 | 상태 | 설명 문서 | 실제 코드 |
-| --- | --- | --- | --- | --- |
-| 서버·Health | FastAPI 앱 생성, router 등록, 서버·DB 상태 확인 | ✅ 구현 | [`app`](app/README.md) · [`api`](app/api/README.md) | [`main.py`](app/main.py) · [`health.py`](app/api/health.py) |
-| 사용자 | 사용자 ID 기반 정보·잔액 조회, DB와 분리된 조회 service | ✅ 구현 | [`identity 설명`](app/modules/identity/README.md) | [`identity/`](app/modules/identity/) |
-| 학습 문제 | 문제 목록·상세 조회, 기준 정답 비공개 | ✅ 구현 | [`learning 설명`](app/modules/learning/README.md) | [`learning/`](app/modules/learning/) |
-| 제출·채점 | `PENDING` attempt 선행 commit, HTTP 202, 백그라운드 채점, 결과 polling | ✅ 흐름 구현 | [`grading 설명`](app/modules/grading/README.md) | [`grading/`](app/modules/grading/) |
-| 실제 코드 실행 | 제출 코드와 기준 답안의 정규화 문자열 비교 | ⚠️ 개발용 evaluator | [`채점기 한계`](app/modules/grading/README.md#파일-역할) | [`evaluator.py`](app/modules/grading/evaluator.py) |
-| 정답 보상 | 원자적 잔액 증가, UNIQUE 원장으로 attempt당 정확히 1회 지급 | ✅ 구현 | [`economy 설명`](app/modules/economy/README.md) | [`economy/`](app/modules/economy/) |
-| 상점·Inventory | 활성 상품 조회, 조건부 원자적 잔액 차감, 보유 수량 반영 | ✅ 구현 | [`shop 설명`](app/modules/shop/README.md) | [`shop/`](app/modules/shop/) |
-| 하우징 | 보유 상품 조회, 소유한 furniture의 슬롯 배치·변경 | ⚠️ 기본 기능 | [`housing 설명`](app/modules/housing/README.md) | [`housing/`](app/modules/housing/) |
-| DB·Migration | SQLAlchemy Base/session, PostgreSQL 설정, users 및 MVP schema migration | ✅ 구현 | [`DB 설명`](app/db/README.md) · [`migration 설명`](migrations/README.md) | [`db/`](app/db/) · [`versions/`](migrations/versions/) |
-| 자동화 테스트 | Health, 사용자, 문제, 제출·채점, 보상, 구매, inventory, housing 검증 | ✅ 7개 통과 | [`tests 설명`](tests/README.md) | [`tests/`](tests/) |
-
-### 아직 골격만 있는 기능
-
-다음 폴더는 향후 확장을 위해 만들어 둔 위치이며, 실제 기능이 구현된 것으로 계산하지 않는다.
-
-- [`cats`](app/modules/cats/README.md): 고양이 수집·돌봄·대화·기억
-- [`gacha`](app/modules/gacha/README.md): 단일·10+1 뽑기, 확률·천장·중복 처리
-- [`battle`](app/modules/battle/README.md): battle 규칙과 처리
-- [`daily_mission`](app/modules/daily_mission/README.md): 일일 미션과 보상
-- [`ranking`](app/modules/ranking/README.md): 선택형 소규모 그룹 순위
-- [`integrations/ai`](app/integrations/ai/README.md): Gemini 등 AI provider 연결
-- [`integrations/queue`](app/integrations/queue/README.md): Redis Queue·Celery 등 durable queue 연결
-
-## 프로젝트 소개
-
-수업에서 Python 문법을 배워도 직접 코드를 작성하고 실패를 고쳐 볼 기회가 부족하면 개념이 오래 남기 어렵다. 이 프로젝트는 부담 없이 다시 시도할 수 있는 문제 풀이 환경과 수집·꾸미기 보상을 연결하여 반복 학습의 동기를 만드는 것을 목표로 한다.
-
-현재 저장소는 전체 PRD 완성본이 아니라, 아래 핵심 흐름이 실제 API와 DB transaction으로 이어지는지 검증한 **백엔드 세로형(vertical slice) MVP**이다.
-
-```mermaid
-flowchart TD
-    A[학습자] --> B[문제 목록·상세 조회]
-    B --> C[코드 제출]
-    C --> D[PENDING attempt 저장]
-    D --> E[백그라운드 채점]
-    E --> F[결과 polling]
-    F --> G[정답 보상 1회 지급]
-    G --> H[상점 구매·inventory]
-    H --> I[보유 가구 배치]
+```bash
+python -m venv .venv
+python -m pip install -e ".[dev]"
+uvicorn app.main:app --reload
 ```
 
-## 한눈에 보는 현재 상태
+## 기능 진행상황
 
-| 구분 | 상태 | 설명 |
-| --- | --- | --- |
-| FastAPI 서버 | ✅ 구동 가능 | `/health`, `/docs` 제공 |
-| PostgreSQL 연동 | ✅ 코드·migration 준비 | 실제 PC에 PostgreSQL과 DB 설정 필요 |
-| 사용자·문제 조회 | ✅ 구현 | ID 조회, 문제 목록·상세 조회 |
-| 제출·비동기 채점 흐름 | ✅ 구현 | `PENDING` 선행 commit, 결과 polling |
-| 채점 방식 | ⚠️ 개발용 | 실제 코드 실행이 아닌 정규화 문자열 비교 |
-| 보상·구매·inventory | ✅ 구현 | 중복 보상 방지, 원자적 잔액 차감 |
-| 하우징 | ⚠️ 기본 기능 | 보유 가구의 단순 슬롯 배치 |
-| 초기 데이터 | ⏳ 후속 작업 | 사용자·문제·상품 seed 필요 |
-| 고양이·가챠·소셜 | ⏳ 미구현 | 폴더 골격만 존재 |
-| 프런트엔드·Tauri | ⏳ 별도 범위 | 이 저장소는 백엔드 전용 |
+### Part 2 — 코딩 학습·채점
 
-> [!IMPORTANT]
-> 현재 채점기는 제출 코드를 직접 실행하지 않는다. 제출·상태 저장·polling·보상 흐름을 검증하는 개발용 evaluator이며, 실제 Python sandbox 채점은 후속 개발 범위이다.
+채점·학습·일일 미션·배틀 백엔드 MVP 구현과 로컬 검증을 완료했다.
 
-## 기술 구성
+- [x] Python CODE Docker sandbox 비동기 채점
+- [x] 격리된 PostgreSQL SQL 채점과 읽기 전용·timeout·결과 제한
+- [x] 객관식 채점, 숙련도·취약 개념·문제 추천
+- [x] Python 150개·SQL 150개 문제 데이터
+- [x] DAILY 자동 배정·완료·보상 API
+- [x] BATTLE 방·참가·준비·시작·점수·승자 API
+- [x] Django Session Auth Bridge 게임 서버 연동부
+- [x] 전체 회귀 테스트 `248 passed`
+- [ ] 홈페이지 인증 API와 프런트엔드를 포함한 종단간 검증
 
-| 영역 | 사용 기술 | 역할 |
-| --- | --- | --- |
-| API | FastAPI | HTTP endpoint와 Swagger UI |
-| Database | PostgreSQL | 운영 기준 영속 데이터 저장소 |
-| ORM | SQLAlchemy 2.x | 모델과 transaction 처리 |
-| Migration | Alembic | DB schema 변경 이력 관리 |
-| Validation | Pydantic | 제출·구매 요청 데이터 검증 |
-| Background work | FastAPI BackgroundTasks | 개발 단계의 프로세스 내부 채점 |
-| Test | Pytest + SQLite | 외부 서비스 없는 핵심 흐름 검증 |
+최근 정리에서는 채점 실행과 상태 전이·숙련도·DAILY/BATTLE 후처리를 분리해 서비스 책임을 명확히 했다. 외부 API와 채점 정책은 변경하지 않았으며 Ruff와 전체 회귀 테스트를 다시 통과했다.
 
-## 문서 바로가기
+자세한 내용: [Part 2 코딩 학습·채점 진행상황](docs/features/part2-status.md)
 
-- [현재 구동 가능한 범위](#1-현재-구동-가능한-범위)
-- [`tasks`와 `task_attempts` 역할 정정](#2-tasks와-task_attempts-역할-정정)
-- [주요 API](#3-주요-api)
-- [Windows PowerShell 실행 방법](#4-windows-powershell-실행-방법)
-- [아직 구현되지 않은 PRD 범위](#10-아직-구현되지-않은-prd-범위)
-- [폴더별 상세 안내](#11-폴더-안내)
+Part 2 확장 설계: [학습 문제·객관식·숙련도·추천 MVP](docs/features/part2-learning-system.md)
 
-## 1. 현재 구동 가능한 범위
+### Part 3 — 상점·가챠·하우징
 
-```text
-FastAPI 서버 실행
-→ PostgreSQL 연결
-→ Alembic migration 적용
-→ 사용자 조회
-→ 학습 문제 목록·상세 조회
-→ 코드 제출 및 PENDING attempt 생성
-→ 백그라운드 채점
-→ 채점 결과 polling
-→ 정답 보상 1회 지급
-→ 상점 상품 조회·구매
-→ 잔액 차감 및 inventory 반영
-→ 보유 가구 조회·배치
+자세한 내용: [Part 3 진행상황](docs/architecture/part3-status.md)
+
+## API
+
+업무 API의 기본 경로는 `/api/v1`이며 실행 중인 서버의 `/docs`가 최종 OpenAPI 명세다.
+
+전체 엔드포인트와 인증·응답 규칙: [API 명세 요약](docs/api/README.md)
+
+## Codex cloud에서 작업
+
+웹에서는 GitHub 저장소를 Codex cloud 환경에 연결한 뒤 이 저장소를 선택한다. 환경의 Python 버전은 3.12로 지정하고 setup script에는 다음을 사용한다.
+
+```bash
+bash scripts/cloud_setup.sh
 ```
 
-| 모듈 | 현재 구현 내용 |
-| --- | --- |
-| Health | FastAPI 서버 및 데이터베이스 연결 상태 확인 |
-| Identity | ID 기반 사용자 정보·재화 잔액 조회 |
-| Learning | 문제 목록·상세 조회, 기준 정답 비공개 |
-| Grading | 제출 기록 생성, HTTP 202, 백그라운드 채점, 결과 polling |
-| Economy | 정답 보상 지급 기록, 동일 attempt 중복 보상 방지 |
-| Shop | 활성 상품 조회, 조건부 원자적 잔액 차감, inventory 반영 |
-| Housing | 보유 상품 조회, 소유한 furniture의 슬롯 배치 |
-| Database | SQLAlchemy 모델, PostgreSQL 연결, Alembic migration |
-| Test | 외부 서비스 없이 핵심 흐름을 검증하는 자동화 테스트 |
-
-## 2. `tasks`와 `task_attempts` 역할 정정
-
-초기 설명에서 `tasks`를 비동기 처리를 저장하는 테이블로 잘못 설명했으나, ERD 분석 결과 다음과 같이 정정한다.
-
-| ERD 용어 | 현재 코드의 실제 테이블명 | 역할 |
-| --- | --- | --- |
-| `tasks` | `learning_tasks` | 문제 제목, 설명, 시작 코드, 기준 답안, 보상량 등 **문제 원본** 저장 |
-| `task_attempts` | `attempts` | 사용자 제출 코드, `PENDING`/`COMPLETED`/`FAILED` 상태, 정답 여부, 결과 메시지 등 **제출 및 채점 결과** 저장 |
-
-`attempts`가 비동기 처리 자체를 저장하는 것은 아니다. 사용자의 제출 건과 백그라운드 채점 작업의 현재 상태 및 결과를 영속적으로 기록하여, 클라이언트가 나중에 결과를 조회할 수 있도록 한다.
-
-```text
-learning_tasks에서 문제 조회
-→ 사용자가 코드 제출
-→ attempts에 PENDING 기록을 먼저 commit
-→ 백그라운드 채점 실행
-→ attempts를 COMPLETED 또는 FAILED로 변경
-→ 클라이언트가 attempt ID로 결과 조회
-```
-
-향후 팀 ERD와 실제 데이터베이스 명칭을 통일할지는 별도 migration으로 결정해야 한다. 기존 migration을 직접 수정하거나 테이블명을 임의로 바꾸지 않는다.
-
-## 3. 주요 API
-
-| Method | Endpoint | 기능 |
-| --- | --- | --- |
-| `GET` | `/health` | FastAPI 서버 상태 확인 |
-| `GET` | `/health/db` | 데이터베이스 연결 상태 확인 |
-| `GET` | `/users/{user_id}` | 사용자 정보 조회 |
-| `GET` | `/tasks` | 문제 목록 조회 |
-| `GET` | `/tasks/{task_id}` | 문제 상세 조회 |
-| `POST` | `/tasks/{task_id}/submissions` | `PENDING` 제출 기록 생성 및 채점 요청 |
-| `GET` | `/attempts/{attempt_id}` | 채점 상태와 결과 조회 |
-| `GET` | `/shop/items` | 판매 중인 상품 조회 |
-| `POST` | `/shop/items/{item_id}/purchase` | 상품 구매 |
-| `GET` | `/users/{user_id}/housing` | 보유 상품과 배치 상태 조회 |
-| `PUT` | `/users/{user_id}/housing/{slot}` | 보유 가구 배치·변경 |
-
-Swagger UI: `http://127.0.0.1:8000/docs`
-
-## 4. Windows PowerShell 실행 방법
-
-### 저장소 복제
-
-```powershell
-cd C:\dev
-git clone https://github.com/cyw0927/backend_temporary.git
-cd backend_temporary
-```
-
-### 가상환경과 패키지 설치
-
-PowerShell 실행 정책 때문에 활성화가 차단되더라도 사용할 수 있도록 가상환경의 Python을 직접 호출한다.
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-Copy-Item .env.example .env
-```
-
-가상환경을 활성화하려면 현재 PowerShell 창에서만 실행 정책을 완화한다.
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-```
-
-### PostgreSQL 준비
-
-`.env.example`의 기본 설정은 다음과 같다.
-
-```env
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/cat_game
-```
-
-PostgreSQL에 `cat_game` 데이터베이스를 만들고, 실제 사용자명과 비밀번호에 맞게 `.env`를 수정한다. 실제 비밀번호가 들어간 `.env`는 Git에 commit하지 않는다.
-
-### Migration과 서버 실행
-
-```powershell
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
-```
-
-실행 후 확인 주소:
-
-- 서버 상태: `http://127.0.0.1:8000/health`
-- DB 상태: `http://127.0.0.1:8000/health/db`
-- API 문서: `http://127.0.0.1:8000/docs`
-
-`http://127.0.0.1:8000/`에는 별도 화면이 없으므로 `{"detail":"Not Found"}`가 나오는 것이 정상이다.
-
-### 테스트
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-```
-
-현재 자동화 테스트는 SQLite를 이용하므로 PostgreSQL이나 Docker 없이 실행할 수 있다.
-
-## 5. 데이터 안전성과 transaction 정책
-
-- 제출 API는 `attempts`에 `PENDING` 행을 먼저 commit한 후 HTTP 202를 반환한다.
-- 외부 평가기 실행 중에는 DB transaction이나 row lock을 유지하지 않는다.
-- 프로세스 내부 semaphore가 동시 채점 작업을 최대 4개로 제한한다.
-- `reward_ledger.attempt_id` UNIQUE 제약으로 동일 attempt의 보상 중복 지급을 막는다.
-- 정답 보상 잔액 증가는 원자적 `UPDATE`로 처리한다.
-- 구매 시 `balance >= price` 조건이 포함된 원자적 `UPDATE`로 잔액을 차감한다.
-- 잔액 차감과 inventory 반영은 같은 transaction에서 처리한다.
-- 사용자가 실제로 보유한 `furniture`만 housing에 배치할 수 있다.
-
-## 6. 현재 채점기의 범위
-
-현재 `DeterministicEvaluator`는 제출된 Python 코드를 직접 실행하지 않는다. 제출 코드와 문제의 기준 답안을 정규화한 뒤 문자열로 비교하는 개발용 fake evaluator이다.
-
-따라서 현재 구현은 제출 기록의 선행 commit, 백그라운드 채점 호출, 상태·결과 저장, polling, 정답 보상의 1회 지급 흐름을 검증한다.
-
-실제 Python 실행 채점기는 후속 개발에서 Docker adapter로 교체해야 한다. 그때 실제로 적용·검증해야 할 제한은 다음과 같다.
-
-- 네트워크 차단
-- 읽기 전용 파일 시스템 적용 범위
-- 프로세스 생성 제한
-- 약 128MB 메모리와 약 0.5 CPU 제한
-- 실행 시간 및 출력 크기 제한
-- 실행 종료 후 컨테이너 폐기
-
-`import os` 자체가 자동으로 차단된다고 설명해서는 안 된다. 허용·차단 범위는 실제 sandbox 정책과 검증 결과에 따라 문서화해야 한다.
-
-## 7. 비동기 처리의 현재 한계
-
-현재 구현은 FastAPI `BackgroundTasks`와 프로세스 내부 semaphore를 사용한다.
-
-- 서버 재시작 시 진행 중인 작업이 유실될 수 있다.
-- 여러 worker 사이에서 작업을 공유하지 않는다.
-- 영속적인 재시도와 장애 복구 기능이 없다.
-
-운영·멀티워커 환경에서는 Redis Queue, Celery 등의 durable queue로 교체해야 한다.
-
-## 8. 초기 데이터 주의사항
-
-Migration은 테이블 구조만 생성한다. 사용자, 문제, 상품을 자동 등록하지 않으므로 새 DB에서는 `/tasks`와 `/shop/items`가 빈 목록을 반환한다.
-
-전체 흐름을 수동으로 시험하려면 최소한 사용자 1명, 학습 문제 1개, 활성 상점 상품 1개가 필요하다. 개발용 seed 데이터는 실제 제품 정책과 분리하여 후속 작업으로 추가한다.
-
-## 9. 검증 완료 항목
-
-- FastAPI 애플리케이션 import
-- Python 문법 및 모듈 import 검사
-- 핵심 자동화 테스트
-- Alembic 단일 head 확인
-- 빈 테스트 DB에 migration 적용
-- SQLAlchemy metadata와 migration 정합성 검사
-- 전체 downgrade 후 재적용
-- PostgreSQL dialect용 migration SQL 생성
-
-마지막 검증 결과:
-
-```text
-pytest -q
-7 passed
-```
-
-SQLite 기반 자동화 검증은 완료했다. 실제 PostgreSQL 접속과 Docker 컨테이너 실행은 구현 환경에서 검증하지 못했으므로 성공했다고 주장하지 않는다.
-
-## 10. 아직 구현되지 않은 PRD 범위
-
-- 회원가입·로그인·인증
-- 선택형·O/X·실행 결과 예측 퀴즈
-- 개념 태그와 기초·응용·도전 난이도
-- 오프라인 학습 이력 연동
-- 개념별 숙련도 계산과 문제 추천
-- 단계별 힌트와 상세 피드백
-- 실제 테스트 케이스 기반 Python sandbox 채점
-- 고양이 모델·수집·단일 및 10+1 뽑기
-- 희귀도·확률·천장·중복 교환 정책
-- 격자 기반 가구 이동·회전·삭제
-- 벽지·바닥 적용
-- 고양이 대화·기억 관리
-- 공개 하우스 방문·돌봄
-- 그룹 순위와 신고·숨김·제재
-- 게임 프런트엔드와 Tauri 앱
-
-가챠 비용·확률·천장, battle 점수, ranking 규칙, daily mission 보상량, proficiency 공식, hint 정책, AI provider, mileage 의미는 제품 정책이 확정되지 않아 TBD로 유지한다.
-
-## 11. 폴더 안내
-
-| 폴더 | 설명 |
-| --- | --- |
-| [`app/`](app/README.md) | FastAPI 애플리케이션 코드 |
-| [`app/api/`](app/api/README.md) | 공통 API |
-| [`app/core/`](app/core/README.md) | 환경설정 등 공통 핵심 설정 |
-| [`app/db/`](app/db/README.md) | SQLAlchemy Base, engine, session |
-| [`app/integrations/`](app/integrations/README.md) | 외부 AI·queue adapter 연결 지점 |
-| [`app/modules/`](app/modules/README.md) | 기능별 도메인 모듈 |
-| [`migrations/`](migrations/README.md) | Alembic migration 환경 |
-| [`tests/`](tests/README.md) | 자동화 테스트 |
-| [`docs/`](docs/README.md) | 설계·분석 문서 보관 위치 |
-| [`infra/`](infra/README.md) | 향후 배포·인프라 설정 위치 |
-
-각 기능 폴더의 세부 역할은 해당 폴더 안의 `README.md`에서 확인할 수 있다.
+새 작업은 루트의 `AGENTS.md`와 `docs/architecture/part3-status.md`를 읽도록 요청하고, Part 3 상태 문서의 권장 순서를 한 항목씩 진행한다. 비밀값과 실제 `.env`는 Git에 올리지 말고 Codex cloud 환경 변수 또는 secrets로 설정한다.
